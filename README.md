@@ -63,13 +63,13 @@ The stack:
 
 ```mermaid
 flowchart TD
-  User["Browser"] --> FE["Next.js frontend"]
-  FE -->|"JSON over proxy"| BE["FastAPI backend"]
+  User["Browser"] --> FE["Next.js<br/>frontend"]
+  FE -->|"JSON over proxy"| BE["FastAPI<br/>backend"]
   BE --> DB["PostgreSQL"]
-  BE --> Files["MP3 store"]
+  BE --> Files["MP3<br/>store"]
   BE --> OpenAI["OpenAI"]
   BE --> Eleven["ElevenLabs"]
-  BE --> News["News providers"]
+  BE --> News["News<br/>providers"]
 ```
 
 ## 5. How to run tests
@@ -126,16 +126,16 @@ the moment the backend contract drifts from the frontend.
 ```mermaid
 flowchart TB
   subgraph Backend
-    api["api routers"]
-    services["services: news, ai, audio, analytics, scheduler, generation"]
-    models["SQLAlchemy models"]
-    core["core: config, retry, logging, ratelimit"]
+    api["api<br/>routers"]
+    services["services<br/>news, ai, audio<br/>analytics, scheduler<br/>generation"]
+    models["SQLAlchemy<br/>models"]
+    core["core<br/>config, retry<br/>logging, ratelimit"]
   end
   subgraph Frontend
-    app["app router pages"]
-    comp["components: dashboard, player, settings, analytics, ui"]
-    hooks["TanStack Query hooks"]
-    lib["typed api client"]
+    app["app router<br/>pages"]
+    comp["components<br/>dashboard, player<br/>settings, analytics, ui"]
+    hooks["TanStack<br/>Query hooks"]
+    lib["typed<br/>api client"]
   end
 ```
 
