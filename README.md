@@ -62,14 +62,14 @@ dashboard is captured from real usage, so a fresh install starts at zero.
 The stack:
 
 ```mermaid
-flowchart LR
-  User[Browser] --> FE[Next.js frontend]
-  FE -->|JSON over proxy| BE[FastAPI backend]
-  BE --> DB[(PostgreSQL)]
-  BE --> Files[(MP3 store)]
-  BE --> OpenAI[OpenAI]
-  BE --> Eleven[ElevenLabs]
-  BE --> News[News providers]
+flowchart TD
+  User["Browser"] --> FE["Next.js frontend"]
+  FE -->|"JSON over proxy"| BE["FastAPI backend"]
+  BE --> DB["PostgreSQL"]
+  BE --> Files["MP3 store"]
+  BE --> OpenAI["OpenAI"]
+  BE --> Eleven["ElevenLabs"]
+  BE --> News["News providers"]
 ```
 
 ## 5. How to run tests
@@ -126,16 +126,16 @@ the moment the backend contract drifts from the frontend.
 ```mermaid
 flowchart TB
   subgraph Backend
-    api[api routers]
-    services[services: news, ai, audio, analytics, scheduler, generation]
-    models[SQLAlchemy models]
-    core[core: config, retry, logging, ratelimit]
+    api["api routers"]
+    services["services: news, ai, audio, analytics, scheduler, generation"]
+    models["SQLAlchemy models"]
+    core["core: config, retry, logging, ratelimit"]
   end
   subgraph Frontend
-    app[app router pages]
-    comp[components: dashboard, player, settings, analytics, ui]
-    hooks[TanStack Query hooks]
-    lib[typed api client]
+    app["app router pages"]
+    comp["components: dashboard, player, settings, analytics, ui"]
+    hooks["TanStack Query hooks"]
+    lib["typed api client"]
   end
 ```
 
