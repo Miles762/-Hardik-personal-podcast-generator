@@ -63,13 +63,13 @@ The stack:
 
 ```mermaid
 flowchart TD
-  User["Browser"] --> FE["Next.js<br/>frontend"]
-  FE -->|"JSON over proxy"| BE["FastAPI<br/>backend"]
-  BE --> DB["PostgreSQL"]
-  BE --> Files["MP3<br/>store"]
+  User["Browser"] --> FE["Frontend"]
+  FE -->|JSON| BE["Backend"]
+  BE --> DB["Postgres"]
+  BE --> Files["MP3s"]
   BE --> OpenAI["OpenAI"]
-  BE --> Eleven["ElevenLabs"]
-  BE --> News["News<br/>providers"]
+  BE --> Eleven["Eleven"]
+  BE --> News["Feeds"]
 ```
 
 ## 5. How to run tests
@@ -126,18 +126,22 @@ the moment the backend contract drifts from the frontend.
 ```mermaid
 flowchart TB
   subgraph Backend
-    api["api<br/>routers"]
-    services["services<br/>news, ai, audio<br/>analytics, scheduler<br/>generation"]
-    models["SQLAlchemy<br/>models"]
-    core["core<br/>config, retry<br/>logging, ratelimit"]
+    api["Routers"]
+    services["Services"]
+    models["Models"]
+    core["Core"]
   end
   subgraph Frontend
-    app["app router<br/>pages"]
-    comp["components<br/>dashboard, player<br/>settings, analytics, ui"]
-    hooks["TanStack<br/>Query hooks"]
-    lib["typed<br/>api client"]
+    app["Pages"]
+    comp["Components"]
+    hooks["Hooks"]
+    lib["API client"]
   end
 ```
+
+Backend services: news, ai, audio, analytics, scheduler, generation. Backend
+core: config, retry, logging, ratelimit. Frontend components: dashboard, player,
+settings, analytics, ui.
 
 ## 9. Known limitations and troubleshooting
 

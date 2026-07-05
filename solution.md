@@ -30,18 +30,18 @@ services rather than routers.
 
 ```mermaid
 flowchart TB
-  FE["Next.js<br/>frontend"] -->|"typed JSON"| API["FastAPI<br/>routers"]
-  API --> NEWS["News<br/>service"]
-  API --> GEN["Generation<br/>orchestrator"]
-  API --> ANALYTICS["Analytics<br/>service"]
+  FE["Frontend"] -->|JSON| API["API"]
+  API --> NEWS["News"]
+  API --> GEN["Pipeline"]
+  API --> ANALYTICS["Analytics"]
   GEN --> NEWS
-  GEN --> AI["AI<br/>pipeline"]
-  GEN --> AUDIO["Audio<br/>service"]
-  NEWS --> Providers["RSS and<br/>Hacker News"]
+  GEN --> AI["AI"]
+  GEN --> AUDIO["Audio"]
+  NEWS --> Providers["Feeds"]
   AI --> OpenAI["OpenAI"]
-  AUDIO --> Eleven["ElevenLabs"]
-  GEN --> DB["PostgreSQL"]
-  AUDIO --> Store["MP3<br/>store"]
+  AUDIO --> Eleven["Eleven"]
+  GEN --> DB["Postgres"]
+  AUDIO --> Store["MP3s"]
 ```
 
 ## 3. Generation pipeline
@@ -52,15 +52,15 @@ status.
 
 ```mermaid
 flowchart TB
-  A["Collect news<br/>concurrently"] --> B["Rank and<br/>filter"]
-  B --> C["Extract full text<br/>for top stories"]
-  C --> D["Stage 1<br/>summarize articles"]
-  D --> E["Stage 2<br/>build outline"]
-  E --> F["Stage 3<br/>write script"]
-  F --> G["Split into<br/>chunks"]
-  G --> H["Synthesize<br/>speech per chunk"]
-  H --> I["Merge into<br/>one MP3"]
-  I --> J["Store audio,<br/>mark ready"]
+  A["Collect"] --> B["Rank"]
+  B --> C["Extract"]
+  C --> D["Summarize"]
+  D --> E["Outline"]
+  E --> F["Script"]
+  F --> G["Chunk"]
+  G --> H["Speak"]
+  H --> I["Merge"]
+  I --> J["Store"]
 ```
 
 Each stage writes a job row, so status polling, the failed jobs metric, and the
