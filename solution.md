@@ -28,20 +28,31 @@ The system splits into a typed frontend and a Python backend that owns the
 pipeline. The frontend never holds business logic; the backend keeps logic in
 services rather than routers.
 
-```mermaid
-flowchart TB
-  FE["Frontend"] -->|JSON| API["API"]
-  API --> NEWS["News"]
-  API --> GEN["Pipeline"]
-  API --> ANALYTICS["Analytics"]
-  GEN --> NEWS
-  GEN --> AI["AI"]
-  GEN --> AUDIO["Audio"]
-  NEWS --> Providers["Feeds"]
-  AI --> OpenAI["OpenAI"]
-  AUDIO --> Eleven["Eleven"]
-  GEN --> DB["Postgres"]
-  AUDIO --> Store["MP3s"]
+```
+┌───────────────────────────────────────────────────────────────┐
+│                    Next.js frontend                           │
+└──────────────────────────────┬────────────────────────────────┘
+                              │  typed JSON
+                              ▼
+┌───────────────────────────────────────────────────────────────┐
+│                     FastAPI routers                           │
+└───┬───────────────────┬──────────────────────┬────────────────┘
+    │                   │                      │
+    ▼                   ▼                      ▼
+┌────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│News service│   │   Generation     │   │ Analytics service│
+│            │◀──│   orchestrator   │   └──────────────────┘
+└─────┬──────┘   └───┬─────────┬────┘
+      │              │         │
+      ▼              ▼         ▼
+┌──────────┐   ┌──────────┐  ┌──────────────┐
+│RSS · HN  │   │AI pipeline│  │Audio service │
+│  feeds   │   │ (OpenAI) │  │ (ElevenLabs) │
+└──────────┘   └──────────┘  └──────┬───────┘
+                                    │
+        ┌───────────────┐           ▼
+        │  PostgreSQL   │◀─────  MP3 store (static)
+        └───────────────┘
 ```
 
 ## 3. Generation pipeline
@@ -50,17 +61,35 @@ The pipeline is the heart of the product. It runs as a background task so the
 request returns immediately with the episode id, and the frontend polls for
 status.
 
-```mermaid
-flowchart TB
-  A["Collect"] --> B["Rank"]
-  B --> C["Extract"]
-  C --> D["Summarize"]
-  D --> E["Outline"]
-  E --> F["Script"]
-  F --> G["Chunk"]
-  G --> H["Speak"]
-  H --> I["Merge"]
-  I --> J["Store"]
+```
+  Collect news (concurrent)
+        │
+        ▼
+  Rank and filter
+        │
+        ▼
+  Extract full text (top stories)
+        │
+        ▼
+  Stage 1: summarize each article   ┐
+        │                           │
+        ▼                           │  three-stage
+  Stage 2: build episode outline    │  OpenAI pipeline
+        │                           │
+        ▼                           │
+  Stage 3: write final script       ┘
+        │
+        ▼
+  Split into chunks
+        │
+        ▼
+  Synthesize speech per chunk (ElevenLabs)
+        │
+        ▼
+  Merge into one MP3
+        │
+        ▼
+  Store audio, mark episode ready
 ```
 
 Each stage writes a job row, so status polling, the failed jobs metric, and the

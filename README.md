@@ -61,15 +61,34 @@ dashboard is captured from real usage, so a fresh install starts at zero.
 
 The stack:
 
-```mermaid
-flowchart TD
-  User["Browser"] --> FE["Frontend"]
-  FE -->|JSON| BE["Backend"]
-  BE --> DB["Postgres"]
-  BE --> Files["MP3s"]
-  BE --> OpenAI["OpenAI"]
-  BE --> Eleven["Eleven"]
-  BE --> News["Feeds"]
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     Browser (user)                           │
+└───────────────────────────┬──────────────────────────────────┘
+                            │  HTTPS / JSON (via Next proxy)
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│                  Next.js frontend (TypeScript)               │
+│        onboarding · dashboard · player · history · admin     │
+└───────────────────────────┬──────────────────────────────────┘
+                            │  typed API calls
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    FastAPI backend (Python)                  │
+│   routers · news service · AI pipeline · audio · analytics   │
+└───┬───────────────┬───────────────┬──────────────┬───────────┘
+    │               │               │              │
+    ▼               ▼               ▼              ▼
+┌────────┐   ┌────────────┐   ┌──────────┐   ┌────────────┐
+│Postgres│   │ MP3 store  │   │ OpenAI   │   │ ElevenLabs │
+│  (DB)  │   │  (static)  │   │ (script) │   │  (voice)   │
+└────────┘   └────────────┘   └──────────┘   └────────────┘
+                                    │
+                                    ▼
+                            ┌──────────────┐
+                            │ News feeds   │
+                            │ RSS · HN API │
+                            └──────────────┘
 ```
 
 ## 5. How to run tests
@@ -123,25 +142,20 @@ the moment the backend contract drifts from the frontend.
 
 ## 8. Project layout
 
-```mermaid
-flowchart TB
-  subgraph Backend
-    api["Routers"]
-    services["Services"]
-    models["Models"]
-    core["Core"]
-  end
-  subgraph Frontend
-    app["Pages"]
-    comp["Components"]
-    hooks["Hooks"]
-    lib["API client"]
-  end
 ```
-
-Backend services: news, ai, audio, analytics, scheduler, generation. Backend
-core: config, retry, logging, ratelimit. Frontend components: dashboard, player,
-settings, analytics, ui.
+Backend (FastAPI, Python)              Frontend (Next.js, TypeScript)
+┌─────────────────────────────┐        ┌─────────────────────────────┐
+│ api/       routers          │        │ app/        router pages    │
+│ services/  news, ai, audio, │        │ components/ dashboard,      │
+│            analytics,       │        │             player,         │
+│            scheduler,       │        │             settings,       │
+│            generation       │        │             analytics, ui   │
+│ models/    SQLAlchemy       │        │ hooks/      TanStack Query   │
+│ core/      config, retry,   │        │ lib/        typed API client │
+│            logging,         │        │ types/      shared schemas   │
+│            ratelimit        │        │                             │
+└─────────────────────────────┘        └─────────────────────────────┘
+```
 
 ## 9. Known limitations and troubleshooting
 
