@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node / Next
+node_modules/
+.next/
+frontend/types/api.d.ts
+
+# Audio artifacts (generated at runtime; sample.mp3 is committed intentionally)
+backend/static/audio/*.mp3
+!sample.mp3
+
+# Take-home input files (the assignment's own files, not part of the submission)
+prd.md
+Problem Statement.pdf
+Option 1.pdf
+FDE_JD.pdf
+
+# OS
+.DS_Store
+.playwright-mcp/

@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* shadcn/ui token palette (PRD 10). Dark mode is the default surface;
+   Linear/Vercel/Spotify-inspired: deep slate, violet accent, glass cards. */
+:root {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --card: 240 8% 8%;
+  --card-foreground: 0 0% 98%;
+  --primary: 263 70% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 6% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 6% 16%;
+  --muted-foreground: 240 5% 65%;
+  --accent: 263 60% 24%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 6% 18%;
+  --input: 240 6% 18%;
+  --ring: 263 70% 60%;
+  --radius: 0.75rem;
+}
+
+.light {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 8%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 8%;
+  --primary: 263 70% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 10% 8%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 263 60% 92%;
+  --accent-foreground: 263 70% 30%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 263 70% 55%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, hsl(263 70% 20% / 0.35), transparent),
+    radial-gradient(900px 500px at 0% 0%, hsl(210 70% 20% / 0.25), transparent),
+    hsl(var(--background));
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism helper (PRD 10). */
+.glass {
+  background: hsl(var(--card) / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.8);
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(0 0% 100% / 0.06),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}

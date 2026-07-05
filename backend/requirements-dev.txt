@@ -1,0 +1,9 @@
+# Test + lint + type tooling. Kept separate so the runtime image stays lean.
+-r requirements.txt
+
+pytest==8.3.4
+pytest-asyncio==0.25.2
+httpx==0.28.1          # also used at runtime; TestClient dependency
+aiosqlite==0.20.0      # in-memory async DB for fast, credit-free tests
+mypy==1.14.1
+ruff==0.8.6

@@ -1,0 +1,28 @@
+# Core web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# Database (async SQLAlchemy 2.0 + Alembic + Postgres driver)
+sqlalchemy[asyncio]==2.0.36
+alembic==1.14.0
+asyncpg==0.30.0
+greenlet==3.1.1
+
+# News collection + full-text extraction (Phase 2)
+httpx==0.28.1
+feedparser==6.0.11
+trafilatura==2.0.0
+
+# AI pipeline (Phase 3)
+openai==1.59.6
+
+# Audio (Phase 4)
+pydub==0.25.1
+
+# Scheduling (Phase 7)
+apscheduler==3.11.0
+
+# Observability / logging
+structlog==24.4.0
