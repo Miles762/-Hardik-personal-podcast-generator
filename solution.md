@@ -106,7 +106,8 @@ understate real spend. Showing no number beats showing a wrong one.
 3. Multi stage LLM versus one large prompt. More calls, but each stage is testable and debuggable, tokens are capped before the expensive script stage, and quality is higher.
 4. In process scheduler versus distributed workers. The brief asks for scheduling, so the app actually schedules with about thirty lines and no extra infrastructure. Jobs die with the process and do not coordinate across nodes; the production path is a cloud cron or a beat worker hitting the same code path, and idempotency makes double fires safe.
 5. Keyword ranking versus embeddings. Keyword and TF style matching is free, deterministic, and unit testable, with an embedding swap available behind the same interface.
-6. Local file storage versus object storage. MP3s are stored locally behind a storage interface, so production can swap to a cloud store without touching callers.
+6. Balanced coverage versus pure top score. Selecting the top stories purely by score let one hot topic fill every slot on a big news day, which does not feel personalized when the listener picked several interests. Selection round robins across interests so each pick is represented; the cost is that the very highest scoring story is occasionally held back so a second interest gets a slot.
+7. Local file storage versus object storage. MP3s are stored locally behind a storage interface, so production can swap to a cloud store without touching callers.
 
 ## 5. Phase summary
 
@@ -140,7 +141,7 @@ the frontend type check, lint, and tests pass.
 3. The analytics dashboard shows only real captured metrics. The seeded history and trend charts were removed at the user's request, so on a fresh single user demo the numbers are small but every one of them is real.
 3. Authentication is a single demo user; there is no real auth, billing, or multi tenancy in this iteration.
 4. Concurrent speech synthesis is left as an optimization; the default is sequential because the user never waits on it.
-5. News coverage is only as broad as the provider list. Feeds span general, tech, science, and sports; a very narrow interest with no matching feed can yield fewer stories, and the selection step keeps them on topic rather than padding with off topic filler. If collection returns nothing at all, the episode fails fast with a clear message instead of asking the model to write about nothing.
+5. News coverage is only as broad as the provider list. Feeds span general, tech, science, and sports; a very narrow interest with no matching feed can yield fewer stories. Story selection round robins across the user's interests, so a multi interest listener hears something from each pick rather than one hot topic (say a big sports day) sweeping every slot; off topic stories are dropped, and if collection returns nothing at all the episode fails fast with a clear message instead of asking the model to write about nothing.
 6. Failed episodes show a short, user readable error in the UI; the raw provider error is kept in the logs and the generation job rows for debugging.
 7. A new generation request is rejected with 409 while the user already has one in flight, and the schedule time is interpreted as UTC.
 

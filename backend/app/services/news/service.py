@@ -17,7 +17,7 @@ from app.services.news.cache import TTLCache
 from app.services.news.dedup import deduplicate
 from app.services.news.extract import enrich_top_n
 from app.services.news.providers import NewsProvider, default_providers
-from app.services.news.ranking import RankWeights, rank_articles
+from app.services.news.ranking import RankWeights, interest_score, rank_articles
 
 logger = logging.getLogger(__name__)
 
@@ -86,18 +86,44 @@ class NewsService:
     def _select_top(
         ranked: list[RankedArticle], interests: list[str], top_n: int
     ) -> list[RankedArticle]:
-        """Pick the top N, preferring on-topic stories.
+        """Pick the top N with balanced coverage across the user's interests.
 
-        When the user has interests, drop zero-match stories so a narrow interest
-        yields on-topic content instead of off-topic filler. Guardrail: if that
-        leaves nothing (a thin-news day for that topic), fall back to the plain
-        top N so generation never runs out of material.
+        On-topic stories (interest score > 0) are assigned to the single interest
+        each best matches, then selected round-robin: the best story for interest
+        1, then interest 2, and so on, before any interest gets a second slot. So
+        a multi-interest user hears from each of their picks instead of one hot
+        topic sweeping every slot. Off-topic stories are dropped; if nothing
+        matches at all, fall back to plain top-N so generation never starves.
         """
         if not interests:
             return ranked[:top_n]
-        on_topic = [
-            r for r in ranked if r.subscores.get("interest", 0.0) > 0.0
-        ]
+
+        on_topic = [r for r in ranked if r.subscores.get("interest", 0.0) > 0.0]
         if not on_topic:
             return ranked[:top_n]
-        return on_topic[:top_n]
+
+        # Bucket each on-topic article under the interest it matches best.
+        buckets: dict[str, list[RankedArticle]] = {i: [] for i in interests}
+        for r in on_topic:
+            best_interest = max(
+                interests, key=lambda i: interest_score(r.article, [i])
+            )
+            buckets[best_interest].append(r)
+        # Each bucket stays in descending score order (on_topic already sorted).
+
+        # Round-robin: take one story per interest per pass, best first.
+        selected: list[RankedArticle] = []
+        cursors = {i: 0 for i in interests}
+        while len(selected) < top_n:
+            progressed = False
+            for i in interests:
+                if len(selected) >= top_n:
+                    break
+                bucket = buckets[i]
+                if cursors[i] < len(bucket):
+                    selected.append(bucket[cursors[i]])
+                    cursors[i] += 1
+                    progressed = True
+            if not progressed:  # all buckets exhausted
+                break
+        return selected
