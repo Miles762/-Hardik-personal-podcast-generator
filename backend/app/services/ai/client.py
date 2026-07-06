@@ -65,7 +65,7 @@ class OpenAIClient:
             )
             parsed = completion.choices[0].message.parsed
             if parsed is None:
-                raise ValueError("model returned no parsed content")
+                raise _MalformedResponse("model returned no parsed content")
             usage = completion.usage
             return LLMResult(
                 parsed=parsed,
@@ -73,5 +73,38 @@ class OpenAIClient:
                 output_tokens=getattr(usage, "completion_tokens", 0) or 0,
             )
 
-        # Exponential backoff on transient API + parse/schema failures (PRD 8, 11.1).
-        return await with_retry(_call, label="openai.structured")
+        # Retry transient API failures AND a malformed/empty model response
+        # (a fresh call often parses cleanly); other errors surface immediately.
+        return await with_retry(
+            _call, label="openai.structured", retry_on=_ai_retryable
+        )
+
+
+class _MalformedResponse(Exception):
+    """Raised when the model returns no parsable structured output."""
+
+
+def _ai_retryable(exc: BaseException) -> bool:
+    """Retry transient network/HTTP failures, OpenAI API errors, and a
+    malformed model response — but not programming errors or bad input."""
+    from app.core.retry import is_transient
+
+    if isinstance(exc, _MalformedResponse):
+        return True
+    # OpenAI SDK transient errors (rate limit, timeout, connection, 5xx).
+    try:
+        from openai import (
+            APIConnectionError,
+            APITimeoutError,
+            InternalServerError,
+            RateLimitError,
+        )
+
+        if isinstance(
+            exc,
+            APIConnectionError | APITimeoutError | RateLimitError | InternalServerError,
+        ):
+            return True
+    except ImportError:  # pragma: no cover - SDK always present at runtime
+        pass
+    return is_transient(exc)

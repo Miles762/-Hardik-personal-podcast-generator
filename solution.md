@@ -136,7 +136,8 @@ the frontend type check, lint, and tests pass.
 ## 7. Known limitations
 
 1. The scheduler is in process and single node; it does not survive a crash or coordinate across replicas.
-2. The analytics dashboard shows only real captured metrics. The seeded history and trend charts were removed at the user's request, so on a fresh single user demo the numbers are small but every one of them is real.
+2. The rate limiter is in process too, so its counters are per instance. Correct for the single node this ships as; behind multiple replicas the effective limit scales with the node count. It sits behind a small interface, so a shared store (for example Redis) is a contained swap.
+3. The analytics dashboard shows only real captured metrics. The seeded history and trend charts were removed at the user's request, so on a fresh single user demo the numbers are small but every one of them is real.
 3. Authentication is a single demo user; there is no real auth, billing, or multi tenancy in this iteration.
 4. Concurrent speech synthesis is left as an optimization; the default is sequential because the user never waits on it.
 5. News coverage is only as broad as the provider list. Feeds span general, tech, science, and sports; a very narrow interest with no matching feed can yield fewer stories, and the selection step keeps them on topic rather than padding with off topic filler. If collection returns nothing at all, the episode fails fast with a clear message instead of asking the model to write about nothing.

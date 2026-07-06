@@ -126,7 +126,9 @@ cp backend/sample_out/sample.mp3 sample.mp3
 ```
 
 The committed `sample.mp3` at the repository root is the best episode produced
-this way.
+this way. It is checked in deliberately (about 2 MB) because a sample of the best
+generated episode is a required deliverable of this assignment, not a stray file;
+runtime episodes under `backend/static/audio/` stay gitignored.
 
 ## 7. Type safe API contract
 
@@ -161,11 +163,16 @@ Backend (FastAPI, Python)              Frontend (Next.js, TypeScript)
 
 1. The scheduler is in process and single node; schedule times are interpreted
    as UTC (the settings page says so next to the time field).
-2. Generation returns 409 while an episode is already in flight for the user —
+2. The rate limiter keeps its counters in process memory, so it is correct only
+   for a single running instance. Behind multiple replicas the effective limit
+   becomes limit times the number of nodes. The production path is a shared store
+   (for example a Redis backed limiter); the limiter sits behind a small
+   interface so this is a contained swap.
+3. Generation returns 409 while an episode is already in flight for the user —
    wait for it to finish (or for the generation timeout, default 300s).
-3. If `docker compose up` fails on the backend, check that `.env` exists (copy
+4. If `docker compose up` fails on the backend, check that `.env` exists (copy
    `.env.example`) — the backend reads it via Compose `env_file`.
-4. A failed episode keeps a short, user readable error; the raw provider error
+5. A failed episode keeps a short, user readable error; the raw provider error
    is in the backend logs and the generation job rows.
 
 For a deeper explanation of the design, the trade offs, and the full

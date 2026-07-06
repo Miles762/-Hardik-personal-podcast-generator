@@ -3,10 +3,11 @@
 All offline/deterministic (PRD 11.1, 11.3, 4.3, 6). No real sleeping, no network.
 """
 
+import httpx
 import pytest
 
 from app.core.ratelimit import RateLimiter
-from app.core.retry import with_retry
+from app.core.retry import is_transient, with_retry
 
 # ---- Retry with exponential backoff (PRD 11.1) ----
 
@@ -17,7 +18,7 @@ async def test_retry_succeeds_after_transient_failures() -> None:
     async def flaky():
         calls["n"] += 1
         if calls["n"] < 3:
-            raise RuntimeError("transient")
+            raise httpx.ConnectError("transient network blip")
         return "ok"
 
     async def fake_sleep(d):
@@ -29,15 +30,42 @@ async def test_retry_succeeds_after_transient_failures() -> None:
     assert sleeps == [0.5, 1.0]  # exponential: 0.5*2^0, 0.5*2^1
 
 
-async def test_retry_reraises_after_exhaustion() -> None:
+async def test_retry_reraises_transient_after_exhaustion() -> None:
     async def always_fail():
-        raise ValueError("nope")
+        raise httpx.ConnectError("still down")
 
     async def fake_sleep(d):
         pass
 
-    with pytest.raises(ValueError, match="nope"):
+    with pytest.raises(httpx.ConnectError, match="still down"):
         await with_retry(always_fail, max_retries=3, base_delay=0.1, sleep=fake_sleep)
+
+
+async def test_retry_does_not_retry_non_transient_errors() -> None:
+    """A real bug (e.g. ValueError) must surface immediately, not be retried."""
+    calls = {"n": 0}
+
+    async def buggy():
+        calls["n"] += 1
+        raise ValueError("this is a real bug, not a network blip")
+
+    async def fake_sleep(d):
+        raise AssertionError("should not sleep/retry a non-transient error")
+
+    with pytest.raises(ValueError, match="real bug"):
+        await with_retry(buggy, max_retries=5, base_delay=0.1, sleep=fake_sleep)
+    assert calls["n"] == 1  # called exactly once, no retries
+
+
+def test_is_transient_classifies_correctly() -> None:
+    assert is_transient(httpx.ConnectError("x")) is True
+    assert is_transient(TimeoutError()) is True
+    # 429 / 5xx are transient; 400 / 401 are not.
+    resp429 = httpx.Response(429, request=httpx.Request("GET", "http://x"))
+    resp400 = httpx.Response(400, request=httpx.Request("GET", "http://x"))
+    assert is_transient(httpx.HTTPStatusError("x", request=resp429.request, response=resp429)) is True
+    assert is_transient(httpx.HTTPStatusError("x", request=resp400.request, response=resp400)) is False
+    assert is_transient(ValueError("bug")) is False
 
 
 # ---- Rate limiter (PRD 11.3) ----
