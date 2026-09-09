@@ -51,6 +51,9 @@ export const api = {
 
   listEpisodes: () => request<EpisodeSummary[]>("/episodes"),
   getEpisode: (id: number) => request<EpisodeDetail>(`/episodes/${id}`),
+  deleteEpisode: (id: number) =>
+    request<void>(`/episodes/${id}`, { method: "DELETE" }),
+  clearEpisodes: () => request<void>("/episodes", { method: "DELETE" }),
   getEpisodeStatus: (id: number) =>
     request<EpisodeStatusResponse>(`/episodes/${id}/status`),
   recordProgress: (id: number, positionSec: number) =>

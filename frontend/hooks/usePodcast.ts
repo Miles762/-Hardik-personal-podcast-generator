@@ -50,6 +50,28 @@ export function useEpisode(id: number | null) {
   });
 }
 
+export function useDeleteEpisode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.deleteEpisode(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.episodes });
+      qc.invalidateQueries({ queryKey: keys.dashboard });
+    },
+  });
+}
+
+export function useClearEpisodes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.clearEpisodes(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.episodes });
+      qc.invalidateQueries({ queryKey: keys.dashboard });
+    },
+  });
+}
+
 export function useGenerate() {
   const qc = useQueryClient();
   return useMutation({
