@@ -18,6 +18,12 @@ COPY . .
 # absent in a fresh checkout. Ensure it exists so the runner COPY never fails.
 RUN mkdir -p public
 
+# The Next proxy rewrites (/api, /audio -> backend) are baked into the
+# standalone build at build time, so the backend URL must be present NOW, not
+# just at runtime. Render passes it in via buildArgs (see render.yaml).
+ARG BACKEND_INTERNAL_URL
+ENV BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
+
 # Produce an optimized standalone production build (Next `output: "standalone"`).
 RUN npm run build
 
