@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     # Per-episode hard timeout in seconds (PRD 4.2).
     generation_timeout_sec: int = Field(default=300)
 
+    # News cache TTL (PRD 7). Short by default so regenerating a few minutes
+    # apart pulls fresh stories instead of replaying the same cached set.
+    news_cache_ttl_sec: int = Field(default=300)
+
     # In-process APScheduler (PRD 4.3). Disabled in tests.
     enable_scheduler: bool = Field(default=True)
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from app.core.config import get_settings
 from app.models import LENGTH_STORY_COUNT, Length
 from app.schemas.news import Article, RankedArticle
 from app.services.news.cache import TTLCache
@@ -39,7 +40,7 @@ async def collect(providers: list[NewsProvider]) -> list[Article]:
 
 
 class NewsService:
-    """Stateful across requests only via its 1-hour cache."""
+    """Stateful across requests only via its TTL cache (news_cache_ttl_sec)."""
 
     def __init__(
         self,
@@ -48,7 +49,9 @@ class NewsService:
         cache: TTLCache[list[Article]] | None = None,
     ) -> None:
         self._providers = providers if providers is not None else default_providers()
-        self._cache: TTLCache[list[Article]] = cache or TTLCache()
+        self._cache: TTLCache[list[Article]] = cache or TTLCache(
+            ttl_seconds=get_settings().news_cache_ttl_sec
+        )
 
     async def _collect_merged(self) -> tuple[list[Article], bool]:
         """Return (deduped articles, cached?). Caches the merged, deduped set."""
