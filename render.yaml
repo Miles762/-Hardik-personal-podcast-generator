@@ -24,12 +24,15 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /api/health
-    # Generated MP3s live on local disk; a persistent disk keeps them across
-    # restarts/redeploys instead of vanishing on every container recycle.
-    disk:
-      name: audio
-      mountPath: /app/static/audio
-      sizeGB: 1
+    # NOTE: Render does not allow a persistent `disk:` on the free plan, so
+    # generated MP3s live on the container's ephemeral filesystem and are lost
+    # when the free instance sleeps/restarts — a fresh Generate re-creates them,
+    # which is fine for a demo. To persist audio, bump this service to a paid
+    # plan (e.g. `plan: starter`) and re-add:
+    #   disk:
+    #     name: audio
+    #     mountPath: /app/static/audio
+    #     sizeGB: 1
     envVars:
       # asyncpg-compatible URL is derived from the DB automatically; the app
       # also normalizes the scheme defensively (see core/config.py).
