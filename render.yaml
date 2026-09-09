@@ -62,8 +62,9 @@ services:
     plan: free
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
-    # Build the lean production image (node server.js), not the dev server.
-    dockerTarget: runner
+    # Render builds the Dockerfile's final stage, which is `runner` — the lean
+    # production image (node server.js). (Blueprint YAML has no dockerTarget
+    # field, so the multi-stage Dockerfile is ordered with runner last.)
     envVars:
       # Server-side proxy target: the backend's private Render URL. The browser
       # only ever talks to this frontend origin (/api and /audio are rewritten).
