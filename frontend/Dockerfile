@@ -14,6 +14,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# `public/` is optional in Next and git does not track empty dirs, so it may be
+# absent in a fresh checkout. Ensure it exists so the runner COPY never fails.
+RUN mkdir -p public
+
 # Produce an optimized standalone production build (Next `output: "standalone"`).
 RUN npm run build
 
