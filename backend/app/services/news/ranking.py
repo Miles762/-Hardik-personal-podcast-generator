@@ -23,6 +23,62 @@ from app.schemas.news import Article, RankedArticle
 
 _WORD_RE = re.compile(r"[a-z0-9]+")
 
+# Interest -> related terms. Real articles rarely contain the bare category word
+# ("sports", "technology"): a football story says "goal"/"league", not "sports".
+# Expanding each interest into its vocabulary lets keyword matching actually fire
+# for topical stories instead of falling back to generic top-N (see service.py).
+INTEREST_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "sports": (
+        "sport", "football", "soccer", "nfl", "nba", "mlb", "nhl", "baseball",
+        "basketball", "tennis", "golf", "cricket", "rugby", "hockey", "league",
+        "playoff", "playoffs", "championship", "match", "goal", "coach",
+        "athlete", "olympics", "fifa", "uefa", "premier", "quarterback",
+        "striker", "touchdown", "tournament", "season", "team",
+    ),
+    "technology": (
+        "tech", "software", "hardware", "ai", "startup", "app", "computing",
+        "chip", "semiconductor", "gadget", "device", "iphone", "android",
+        "cloud", "developer", "programming", "cybersecurity", "robot",
+    ),
+    "science": (
+        "research", "study", "scientists", "physics", "biology", "chemistry",
+        "genetics", "climate", "quantum", "experiment", "discovery",
+    ),
+    "space": (
+        "nasa", "rocket", "orbit", "satellite", "spacecraft", "astronaut",
+        "mars", "moon", "launch", "spacex", "galaxy", "telescope", "asteroid",
+    ),
+    "world news": (
+        "world", "government", "election", "president", "minister", "war",
+        "diplomacy", "economy", "international", "country", "policy",
+    ),
+    "business": (
+        "market", "stocks", "economy", "revenue", "earnings", "investors",
+        "acquisition", "ipo", "company", "trade", "finance",
+    ),
+    "politics": (
+        "election", "senate", "congress", "president", "policy", "vote",
+        "government", "campaign", "minister", "parliament",
+    ),
+    "health": (
+        "medical", "disease", "vaccine", "hospital", "doctors", "wellness",
+        "mental", "nutrition", "fitness", "medicine",
+    ),
+    "entertainment": (
+        "movie", "film", "music", "celebrity", "hollywood", "streaming",
+        "album", "concert", "tv", "show", "actor",
+    ),
+}
+
+
+def _expand_interest_terms(interests: list[str]) -> set[str]:
+    """Interest labels -> the set of match terms (label tokens + synonyms)."""
+    terms: set[str] = set()
+    for interest in interests:
+        terms.update(_tokenize(interest))
+        terms.update(INTEREST_SYNONYMS.get(interest.strip().lower(), ()))
+    return terms
+
 # Static per-source trust weights in [0, 1] (PRD 7). Unknown sources -> default.
 SOURCE_TRUST: dict[str, float] = {
     "BBC": 0.95,
@@ -65,9 +121,7 @@ def interest_score(article: Article, interests: list[str]) -> float:
     tf = Counter(tokens)
     total = sum(tf.values())
 
-    interest_terms: set[str] = set()
-    for interest in interests:
-        interest_terms.update(_tokenize(interest))
+    interest_terms = _expand_interest_terms(interests)
     if not interest_terms:
         return 0.0
 
