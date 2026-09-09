@@ -56,6 +56,18 @@ class Settings(BaseSettings):
     generate_rate_limit: int = Field(default=10)
     generate_rate_window_sec: int = Field(default=60)
 
+    @field_validator("openai_api_key", "elevenlabs_api_key", "openai_model", mode="after")
+    @classmethod
+    def _strip_secret(cls, value: str) -> str:
+        """Trim whitespace/newlines from keys.
+
+        Pasting a key into a dashboard env field can append a trailing newline,
+        which makes an illegal HTTP Authorization header (httpx raises
+        LocalProtocolError -> surfaces as a confusing "Connection error"). A
+        plain strip makes the app robust to that.
+        """
+        return value.strip()
+
     @field_validator("database_url", mode="after")
     @classmethod
     def _force_asyncpg_driver(cls, url: str) -> str:
