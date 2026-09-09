@@ -66,10 +66,10 @@ services:
     # production image (node server.js). (Blueprint YAML has no dockerTarget
     # field, so the multi-stage Dockerfile is ordered with runner last.)
     envVars:
-      # Server-side proxy target: the backend's private Render URL. The browser
-      # only ever talks to this frontend origin (/api and /audio are rewritten).
+      # Server-side proxy target. We use the backend's PUBLIC URL rather than a
+      # `fromService` private hostname: Render's private DNS name for the backend
+      # did not resolve from the frontend container (ENOTFOUND ...-vaew), so the
+      # public URL is the reliable target. The browser still only talks to this
+      # frontend origin; /api and /audio are proxied server-side to the backend.
       - key: BACKEND_INTERNAL_URL
-        fromService:
-          type: web
-          name: podcast-backend
-          property: hostport
+        value: https://podcast-backend-vaew.onrender.com
