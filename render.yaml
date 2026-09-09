@@ -1,0 +1,71 @@
+# Render Blueprint — one-click deploy of the whole stack.
+# https://render.com/docs/blueprint-spec
+#
+# Creates three resources:
+#   1. podcast-db        — managed Postgres 16
+#   2. podcast-backend   — FastAPI (Docker), migrates + seeds on boot, serves audio
+#   3. podcast-frontend  — Next.js production server (Docker), proxies /api + /audio
+#
+# After the first deploy you only need to paste two secrets (the OpenAI and
+# ElevenLabs keys) — everything else is wired automatically.
+
+databases:
+  - name: podcast-db
+    databaseName: podcast
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  # ---------------------------- Backend (FastAPI) ----------------------------
+  - type: web
+    name: podcast-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    # Generated MP3s live on local disk; a persistent disk keeps them across
+    # restarts/redeploys instead of vanishing on every container recycle.
+    disk:
+      name: audio
+      mountPath: /app/static/audio
+      sizeGB: 1
+    envVars:
+      # asyncpg-compatible URL is derived from the DB automatically; the app
+      # also normalizes the scheme defensively (see core/config.py).
+      - key: DATABASE_URL
+        fromDatabase:
+          name: podcast-db
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      # The browser reaches the backend through the frontend's same-origin
+      # proxy, so this is a belt-and-suspenders allow-list for the public URL.
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: podcast-frontend
+          property: host
+      # Live generation is ON: paste your real keys in the Render dashboard.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+
+  # ---------------------------- Frontend (Next.js) ---------------------------
+  - type: web
+    name: podcast-frontend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    # Build the lean production image (node server.js), not the dev server.
+    dockerTarget: runner
+    envVars:
+      # Server-side proxy target: the backend's private Render URL. The browser
+      # only ever talks to this frontend origin (/api and /audio are rewritten).
+      - key: BACKEND_INTERNAL_URL
+        fromService:
+          type: web
+          name: podcast-backend
+          property: hostport

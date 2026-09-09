@@ -44,9 +44,16 @@ services:
       retries: 10
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # Local dev uses the deps stage (has full node_modules + dev server); the
+      # final `runner` stage is the lean production image used for deploys.
+      target: deps
     environment:
       BACKEND_INTERNAL_URL: http://backend:8000
+    # Hot-reload dev server for local work; the deployed image runs `node
+    # server.js` from the standalone build instead (see frontend/Dockerfile).
+    command: sh -c "npm run dev"
     ports:
       - "3000:3000"
     volumes:

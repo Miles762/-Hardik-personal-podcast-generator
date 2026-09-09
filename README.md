@@ -112,6 +112,31 @@ docker compose run frontend npm run test
 Automated tests never call OpenAI, ElevenLabs, or the news providers, so they
 spend no API credits.
 
+## 5b. Deploying a public link (Render)
+
+The repo ships a Render blueprint (`render.yaml`) that stands up the whole stack
+— managed Postgres, the FastAPI backend (Docker), and the Next.js production
+frontend (Docker) — from one file. The backend runs migrations and seeds the
+demo user on first boot; a 1 GB persistent disk keeps generated MP3s across
+restarts. Live generation is enabled, so the public link can create real
+episodes using your API keys.
+
+Steps:
+
+1. Push this repo to GitHub (Render deploys from a Git remote).
+2. In the Render dashboard: **New → Blueprint**, pick the repo. Render reads
+   `render.yaml` and provisions all three services plus the database.
+3. When prompted, paste the two secrets Render leaves blank
+   (`OPENAI_API_KEY`, `ELEVENLABS_API_KEY`) on the **podcast-backend** service.
+   Everything else (`DATABASE_URL`, `CORS_ORIGINS`, `BACKEND_INTERNAL_URL`) is
+   wired automatically between services.
+4. Deploy. Share the **podcast-frontend** URL — the browser only ever talks to
+   that origin; it proxies `/api` and `/audio` to the backend privately.
+
+Note on the free tier: free Render web services sleep after inactivity, so the
+first hit after idle takes ~30–60s to wake, and the free Postgres plan expires
+after 90 days. For a persistent demo, upgrade those two to a paid plan.
+
 ## 6. Producing the sample episode
 
 The headless script runs the exact production pipeline (under a dedicated

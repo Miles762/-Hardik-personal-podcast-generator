@@ -7,7 +7,7 @@ weights, cost constants) without changing the loading mechanism.
 
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -56,9 +56,34 @@ class Settings(BaseSettings):
     generate_rate_limit: int = Field(default=10)
     generate_rate_window_sec: int = Field(default=60)
 
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _force_asyncpg_driver(cls, url: str) -> str:
+        """Normalize a plain Postgres URL to the async (asyncpg) driver.
+
+        Managed hosts (Render, Heroku, Railway) hand out ``postgres://`` or
+        ``postgresql://`` URLs, but SQLAlchemy's async engine needs the
+        ``postgresql+asyncpg://`` scheme. Rewriting here means the deploy can
+        wire ``DATABASE_URL`` straight from the provider with no manual editing.
+        """
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://") :]
+        if url.startswith("postgresql://"):
+            url = "postgresql+asyncpg://" + url[len("postgresql://") :]
+        return url
+
     @property
     def cors_origins_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        origins: list[str] = []
+        for raw in self.cors_origins.split(","):
+            o = raw.strip()
+            if not o:
+                continue
+            # A bare host (e.g. from a host-only env var) becomes an https origin.
+            if not o.startswith(("http://", "https://")):
+                o = f"https://{o}"
+            origins.append(o)
+        return origins
 
 
 @lru_cache

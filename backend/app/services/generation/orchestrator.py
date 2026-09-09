@@ -58,6 +58,14 @@ class GenerationError(Exception):
         self.user_message = user_message
 
 
+class NoArticlesError(RuntimeError):
+    """News collection succeeded but returned zero usable articles.
+
+    A distinct type so the orchestrator can tell "no news today" apart from a
+    genuine collection failure without string-matching on an error message.
+    """
+
+
 ERR_TIMEOUT = "Generation timed out. Please try again."
 ERR_NEWS = "Couldn't gather news right now. Please try again in a few minutes."
 ERR_NO_NEWS = "No fresh news stories were available. Please try again later."
@@ -144,12 +152,13 @@ async def _run(
         ranked, _cached = await news_service.get_ranked(interests, length)
         if not ranked:
             # Fail fast instead of asking the LLM to write about nothing.
-            raise RuntimeError("news collection returned no articles")
-    except Exception as exc:  # noqa: BLE001
+            raise NoArticlesError("news collection returned no articles")
+    except NoArticlesError as exc:
         await fail_job(session, news_job, str(exc))
-        raise GenerationError(
-            ERR_NO_NEWS if "no articles" in str(exc) else ERR_NEWS
-        ) from exc
+        raise GenerationError(ERR_NO_NEWS) from exc
+    except Exception as exc:  # noqa: BLE001 — collection failure; surface as user-safe error
+        await fail_job(session, news_job, str(exc))
+        raise GenerationError(ERR_NEWS) from exc
     await finish_job(session, news_job)
 
     # --- AI pipeline (per-stage job rows) ---

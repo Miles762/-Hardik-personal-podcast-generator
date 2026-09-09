@@ -16,6 +16,7 @@ venv/
 node_modules/
 .next/
 frontend/types/api.d.ts
+frontend/tsconfig.tsbuildinfo
 
 # Audio artifacts (generated at runtime; sample.mp3 is committed intentionally)
 backend/static/audio/*.mp3

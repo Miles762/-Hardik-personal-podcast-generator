@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:22-slim AS deps
 
 WORKDIR /app
 
@@ -7,10 +7,30 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
+
+FROM node:22-slim AS builder
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-EXPOSE 3000
+# Produce an optimized standalone production build (Next `output: "standalone"`).
+RUN npm run build
 
-# Dev server is sufficient for the take-home and keeps the reviewer's one-command
-# run simple. A production image would `npm run build && npm start`.
-CMD ["npm", "run", "dev"]
+
+FROM node:22-slim AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Copy only what the standalone server needs: the traced server, static assets,
+# and public files. This keeps the runtime image small and free of dev tooling.
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE 3000
+ENV PORT=3000 HOSTNAME=0.0.0.0
+
+# Standalone output emits its own minimal server at server.js.
+CMD ["node", "server.js"]
